@@ -9,6 +9,7 @@ import ProgressBar from "./ProgressBar";
 class MessageForm extends React.Component {
   state = {
     storageRef: firebase.storage().ref(),
+    typingRef: firebase.database().ref("typing"),
     uploadTask: null,
     uploadState: "",
     percentUploaded: 0,
@@ -26,6 +27,22 @@ class MessageForm extends React.Component {
 
   handleChange = event => {
     this.setState({ [event.target.name]: event.target.value });
+  };
+
+  handleKeyDown = () => {
+    const { message, typingRef, channel, user } = this.state;
+
+    if (message) {
+      typingRef
+        .child(channel.id)
+        .child(user.uid)
+        .set(user.displayName);
+    } else {
+      typingRef
+        .child(channel.id)
+        .child(user.uid)
+        .remove();
+    }
   };
 
   createMessage = (fileUrl = null) => {
@@ -47,7 +64,7 @@ class MessageForm extends React.Component {
 
   sendMessage = () => {
     const { getMessagesRef } = this.props;
-    const { message, channel } = this.state;
+    const { message, channel, user, typingRef } = this.state;
 
     if (message) {
       this.setState({ loading: true });
@@ -57,6 +74,10 @@ class MessageForm extends React.Component {
         .set(this.createMessage())
         .then(() => {
           this.setState({ loading: false, message: "", errors: [] });
+          typingRef
+            .child(channel.id)
+            .child(user.uid)
+            .remove();
         })
         .catch(err => {
           console.error(err);
@@ -73,16 +94,16 @@ class MessageForm extends React.Component {
   };
 
   getPath = () => {
-    if(this.props.isPrivateChannel) {
+    if (this.props.isPrivateChannel) {
       return `chat/private-${this.state.channel.id}`;
     } else {
-      return 'chat/public';
+      return "chat/public";
     }
-  }
+  };
 
   uploadFile = (file, metadata) => {
     const pathToUpload = this.state.channel.id;
-    const ref = this.props.getMessagesRef;
+    const ref = this.props.getMessagesRef();
     const filePath = `${this.getPath()}/${uuidv4()}.jpg`;
 
     this.setState(
@@ -97,7 +118,6 @@ class MessageForm extends React.Component {
             const percentUploaded = Math.round(
               (snap.bytesTransferred / snap.totalBytes) * 100
             );
-            this.props.isProgressBarVisible(percentUploaded);
             this.setState({ percentUploaded });
           },
           err => {
@@ -145,6 +165,7 @@ class MessageForm extends React.Component {
   };
 
   render() {
+    // prettier-ignore
     const { errors, message, loading, modal, uploadState, percentUploaded } = this.state;
 
     return (
@@ -153,6 +174,7 @@ class MessageForm extends React.Component {
           fluid
           name="message"
           onChange={this.handleChange}
+          onKeyDown={this.handleKeyDown}
           value={message}
           style={{ marginBottom: "0.7em" }}
           label={<Button icon={"add"} />}
@@ -175,7 +197,7 @@ class MessageForm extends React.Component {
           />
           <Button
             color="teal"
-            disabled={uploadState === 'uploading'}
+            disabled={uploadState === "uploading"}
             onClick={this.openModal}
             content="Upload Media"
             labelPosition="right"
@@ -183,13 +205,13 @@ class MessageForm extends React.Component {
           />
         </Button.Group>
         <FileModal
-            modal={modal}
-            closeModal={this.closeModal}
-            uploadFile={this.uploadFile}
-          />
+          modal={modal}
+          closeModal={this.closeModal}
+          uploadFile={this.uploadFile}
+        />
         <ProgressBar
-            uploadState={uploadState}
-            percentUploaded={percentUploaded}
+          uploadState={uploadState}
+          percentUploaded={percentUploaded}
         />
       </Segment>
     );
