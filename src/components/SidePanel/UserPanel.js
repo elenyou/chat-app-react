@@ -33,9 +33,10 @@ class UserPanel extends Component {
 
     render() {
         const { user } = this.state;
+        const { primaryColor } = this.props;
 
         return (
-            <Grid style={{ background: '#a23131' }}>
+            <Grid style={{ background: primaryColor }}>
                 <GridColumn>
                     <GridRow style={{ padding: '1.5em', margin: 0 }}>
 
