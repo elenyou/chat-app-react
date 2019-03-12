@@ -25,15 +25,11 @@ class MessageForm extends React.Component {
   };
 
   componentWillUnmount() {
-    if (this.state.uploadState !== null) {
-      this.state.uploadTask.camcel();
-      this.setState({
-        uploadState: null
-      });
+    if (this.state.uploadTask !== null) {
+      this.state.uploadTask.cancel();
+      this.setState({ uploadTask: null });
     }
   }
-
-
 
   openModal = () => this.setState({ modal: true });
 
